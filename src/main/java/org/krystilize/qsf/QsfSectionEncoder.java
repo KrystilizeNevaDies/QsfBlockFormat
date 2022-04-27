@@ -1,13 +1,12 @@
 package org.krystilize.qsf;
 
-import com.github.jinahya.bit.io.BitOutput;
-import com.github.jinahya.bit.io.BitOutputAdapter;
-import com.github.jinahya.bit.io.StreamByteOutput;
+import com.github.jinahya.bit.io.*;
 import speiger.src.collections.objects.maps.impl.hash.Object2ShortOpenHashMap;
 import speiger.src.collections.objects.maps.interfaces.Object2ShortMap;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -20,7 +19,6 @@ public record QsfSectionEncoder(Settings settings) {
 
     /**
      * Encodes the blocks.
-     *
      * @param blocks The blocks to encode.
      * @param out    The output to write to.
      */
@@ -35,15 +33,30 @@ public record QsfSectionEncoder(Settings settings) {
     /**
      * Encodes the blocks.
      * @param blocks The blocks to encode.
+     * @param out    The output to write to.
+     */
+    public void encode(QsfBlocks blocks, ByteOutput out) {
+        encode(blocks, BitOutputAdapter.from(out));
+    }
+
+    /**
+     * Encodes the blocks.
+     * @param blocks The blocks to encode.
+     * @param outStream The output to write to.
+     */
+    public void encode(QsfBlocks blocks, OutputStream outStream) {
+        encode(blocks, StreamByteOutput.from(outStream));
+    }
+
+    /**
+     * Encodes the blocks.
+     * @param blocks The blocks to encode.
      * @return The encoded section.
      */
     public byte[] encode(QsfBlocks blocks) {
-        try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
-            encode(blocks, BitOutputAdapter.from(StreamByteOutput.from(out)));
-            return out.toByteArray();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        encode(blocks, out);
+        return out.toByteArray();
     }
 
     private void encodeUNSAFE(QsfBlocks blocks, BitOutput out) throws IOException {

@@ -48,7 +48,7 @@ class BinaryUtils {
      */
     public static short readUnit(int unitBitSize, BitInput in) throws IOException {
         assert unitBitSize > 0;
-        assert unitBitSize <= 16;
+        assert unitBitSize <= 32;
         return (short) in.readUnsignedInt(unitBitSize);
     }
 
@@ -59,9 +59,9 @@ class BinaryUtils {
      * @param out         The output list.
      * @param unit        The unit to write.
      */
-    public static void writeUnit(int unitBitSize, BitOutput out, short unit) throws IOException {
+    public static void writeUnit(int unitBitSize, BitOutput out, int unit) throws IOException {
         assert unitBitSize > 0;
-        assert unitBitSize <= 16;
+        assert unitBitSize <= 32;
         out.writeUnsignedInt(unitBitSize, unit);
     }
 

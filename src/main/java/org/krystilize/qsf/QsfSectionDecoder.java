@@ -2,10 +2,12 @@ package org.krystilize.qsf;
 
 import com.github.jinahya.bit.io.BitInput;
 import com.github.jinahya.bit.io.BitInputAdapter;
+import com.github.jinahya.bit.io.ByteInput;
 import com.github.jinahya.bit.io.StreamByteInput;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -17,7 +19,7 @@ public record QsfSectionDecoder(Settings settings) {
 
     /**
      * Decodes the blocks.
-     * @param in the input stream
+     * @param in the input
      * @return the decoded section
      */
     public QsfBlocks decode(BitInput in) {
@@ -30,12 +32,29 @@ public record QsfSectionDecoder(Settings settings) {
 
     /**
      * Decodes the blocks.
+     * @param in the input
+     * @return the decoded section
+     */
+    public QsfBlocks decode(ByteInput in) {
+        return decode(BitInputAdapter.from(in));
+    }
+
+    /**
+     * Decodes the blocks.
+     * @param in the input stream
+     * @return the decoded section
+     */
+    public QsfBlocks decode(InputStream in) {
+        return decode(StreamByteInput.from(in));
+    }
+
+    /**
+     * Decodes the blocks.
      * @param bytes the bytes
      * @return the decoded section
      */
     public QsfBlocks decode(byte[] bytes) {
-        ByteArrayInputStream in = new ByteArrayInputStream(bytes);
-        return decode(BitInputAdapter.from(StreamByteInput.from(in)));
+        return decode(new ByteArrayInputStream(bytes));
     }
 
     private QsfBlocks decodeUNSAFE(BitInput in) throws IOException {

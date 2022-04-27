@@ -5,15 +5,11 @@ import speiger.src.collections.shorts.lists.ShortArrayList;
 import speiger.src.collections.shorts.lists.ShortList;
 import speiger.src.collections.shorts.queues.ShortArrayFIFOQueue;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.EOFException;
-import java.io.IOException;
+import java.io.*;
 
 class LZSSUtil {
     /**
      * Compresses the given data using LZSS. This assumes that the data units are byte-based.
-     *
      * @param data The data to compress.
      * @return The compressed data as a byte[]
      * @throws IOException If the input is not valid.
@@ -24,7 +20,6 @@ class LZSSUtil {
 
     /**
      * Compresses the given data using LZSS.
-     *
      * @param unitBitSize The size of the unit in bits.
      * @param unitCount   The amount of units to compress.
      * @param data        The data to compress.
@@ -38,7 +33,6 @@ class LZSSUtil {
 
     /**
      * Compresses the given data using LZSS.
-     *
      * @param unitBitSize The size of the unit in bits.
      * @param unitCount   The amount of units to compress.
      * @param in          The input list.
@@ -51,7 +45,6 @@ class LZSSUtil {
 
     /**
      * Compresses the given data using LZSS.
-     *
      * @param searchBuffer    The size of the search buffer.
      * @param lookAheadBuffer The size of the look ahead buffer.
      * @param unitBitSize     The size of the unit in bits.
@@ -75,11 +68,11 @@ class LZSSUtil {
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         BitOutput out = BitOutputAdapter.from(StreamByteOutput.from(outputStream));
 
-        // 1, 2, 3:
-        BinaryUtils.writeUnit(12, out, searchBuffer);
-        BinaryUtils.writeUnit(12, out, lookAheadBuffer);
-        BinaryUtils.writeUnit(12, out, unitBitSize);
-        BinaryUtils.writeUnit(12, out, (short) (unitCount - 1));
+        // 1, 2, 3, 4:
+        BinaryUtils.writeUnit(12, out, searchBuffer - 1);
+        BinaryUtils.writeUnit(12, out, lookAheadBuffer - 1);
+        BinaryUtils.writeUnit(12, out, unitBitSize - 1);
+        BinaryUtils.writeUnit(12, out, unitCount - 1);
 
         // The rest is the actual data
         ShortArrayFIFOQueue buffer = new ShortArrayFIFOQueue();
@@ -193,9 +186,9 @@ class LZSSUtil {
         // 0b0 -> unit
         // 0b1 -> offset | length
 
-        final int searchBuffer = BinaryUtils.readUnit(12, in); // 1
-        final int lookAheadBuffer = BinaryUtils.readUnit(12, in); // 2
-        final int unitBitSize = BinaryUtils.readUnit(12, in); // 3
+        final int searchBuffer = BinaryUtils.readUnit(12, in) + 1; // 1
+        final int lookAheadBuffer = BinaryUtils.readUnit(12, in) + 1; // 2
+        final int unitBitSize = BinaryUtils.readUnit(12, in) + 1; // 3
         final int unitCount = BinaryUtils.readUnit(12, in) + 1; // 4
 
         final int offsetSize = BinaryUtils.bitsToRepresent(searchBuffer);
@@ -208,7 +201,6 @@ class LZSSUtil {
         }
 
         // The rest is the actual data
-
         int unitsProcessed = 0;
         while (unitsProcessed < unitCount) {
             try {
@@ -220,11 +212,12 @@ class LZSSUtil {
                 } else {
                     // Match
                     // Offset then length
-                    short offset = BinaryUtils.readUnit(offsetSize, in);
-                    short length = BinaryUtils.readUnit(lengthSize, in);
+                    int offset = BinaryUtils.readUnit(offsetSize, in);
+                    int length = BinaryUtils.readUnit(lengthSize, in);
+                    int runUntil = offset - length;
 
                     int listSize = out.size();
-                    for (short i = offset; i > 0; i--) {
+                    for (int i = offset; i > runUntil; i--) {
                         int index = listSize - i;
                         out.add(out.getShort(index));
                         unitsProcessed++;
@@ -239,12 +232,13 @@ class LZSSUtil {
             out.removeShort(0);
         }
 
-        // Convert to bits
+        // Convert to byte array
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         BitOutput byteOut = BitOutputAdapter.from(StreamByteOutput.from(outputStream));
         for (short value : out) {
             BinaryUtils.writeUnit(unitBitSize, byteOut, value);
         }
+        byteOut.align();
         return outputStream.toByteArray();
     }
 }

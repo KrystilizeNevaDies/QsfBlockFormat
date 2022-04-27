@@ -25,6 +25,22 @@ public interface QsfBlocks {
      */
     void forEach(BlockConsumer consumer);
 
+    /**
+     * Gets the information associated with this section.
+     * @return The information
+     */
+    default Information information() {
+        long[] count = new long[1];
+        forEach(block -> count[0]++);
+
+        // 1 -> 1
+        // 9 -> 3
+        // 25 -> 5
+        // 49 -> 7
+        int width = (int) Math.ceil(Math.sqrt(count[0]));
+        return new Information(width);
+    }
+
     default boolean contentEquals(QsfBlocks decoded) {
         Queue<Block> blocks = new ArrayDeque<>();
         decoded.forEach(blocks::add);
@@ -44,6 +60,9 @@ public interface QsfBlocks {
         });
 
         return !failed.get();
+    }
+
+    record Information(int width) {
     }
 
     interface BlockConsumer extends Consumer<Block> {
